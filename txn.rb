@@ -1,8 +1,10 @@
 class Txn
-  attr_reader :amount, :from, :to, :signature, :timestamp
+  attr_reader :seat, :from, :to, :signature, :timestamp
 
-  def initialize(amount:, from:, to:, signature:, timestamp:)
-    @amount = amount.to_i
+  def initialize(creation_nonce:, venue:, seat:, from:, to:, signature:, timestamp:)
+    @creation_nonce = creation_nonce
+    @venue = venue
+    @seat = seat
     @from = from
     @to = to
     @signature = signature
@@ -10,14 +12,15 @@ class Txn
   end
 
   def message
-    Digest::SHA256.hexdigest([timestamp, amount, from, to].join)
+    Digest::SHA256.hexdigest([timestamp, seat, from, to].join)
   end
 
   def valid?
     valid = true
 
     valid &&= valid_signature?
-    valid &&= amount > 0
+    valid &&= valid_venue?
+    valid &&= seat.present?
     valid &&= from != to
 
     valid
@@ -40,7 +43,7 @@ class Txn
   def serialize
     {
       timestamp: timestamp,
-      amount: amount.to_i,
+      seat: seat,
       from: from,
       to: to,
       signature: signature
@@ -53,6 +56,6 @@ class Txn
   end
 
   def to_s
-    "#{amount} from #{name(from)} to #{name(to)}"
+    "#{seat} from #{name(from)} to #{name(to)}"
   end
 end
